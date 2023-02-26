@@ -2,6 +2,7 @@
 using CafeForGames.Models;
 using CafeForGames.Services.IRepository;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace CafeForGames.Services.Repository
 {
@@ -14,11 +15,26 @@ namespace CafeForGames.Services.Repository
 
         public AppDbContext _Context { get; }
 
+        public async Task<int> AddGameAsync(Games game)
+        {
+            await _Context.Games.AddAsync(game);
+            await _Context.SaveChangesAsync();
+            return game.Id;
+        }
+
+        public async Task DeleteGameAsync(int id)
+        {
+            var result = await _Context.Games.FirstOrDefaultAsync(c => c.Id == id);
+            EntityEntry entityEntry = _Context.Entry(result);
+            entityEntry.State = EntityState.Deleted;
+            await _Context.SaveChangesAsync();
+        }
+
         public async Task<IEnumerable<Games>> GetGamesAllAsync()=> await _Context.Games.ToListAsync();
 
-        public Task<Games> GetGamesByIdAsync(int id)
+        public async Task<Games> GetGamesByIdAsync(int id)
         {
-            throw new NotImplementedException();
+            return await _Context.Games.FirstOrDefaultAsync(x => x.Id == id);
         }
     }
 }

@@ -6,5 +6,7 @@ namespace CafeForGames.Services.IRepository
     {
         Task<IEnumerable<Games>> GetGamesAllAsync();
         Task<Games> GetGamesByIdAsync(int id);
+        Task<int> AddGameAsync(Games game);
+        Task DeleteGameAsync(int id);
     }
 }
