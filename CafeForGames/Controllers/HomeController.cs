@@ -1,20 +1,24 @@
-﻿using CafeForGames.Repository;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using CafeForGames.Models;
+using CafeForGames.Services.IRepository;
 
 namespace CafeForGames.Controllers
 {
+    [ApiController]
+    [Route("api/games")]
     public class HomeController : Controller
     {
-        IGamerepository<Games> _CafeForGames;
-        public HomeController(IGamerepository<Games> CafeForGames)
+        public IGamesService _Service;
+        public HomeController(IGamesService Service)
         {
-            _CafeForGames = CafeForGames;
+            _Service = Service;
         }
-        public IActionResult Index()
+
+        [HttpGet]
+        public async Task<IActionResult> Index()
         {
-            var result = _CafeForGames.List();
-            return View(result);
+            var result = await _Service.GetGamesAllAsync();
+            return Ok(result);
         }
     }
 }
