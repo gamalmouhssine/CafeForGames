@@ -16,7 +16,7 @@ namespace CafeForGames.Controllers
 
         [HttpGet]
         public async Task<IActionResult> Index()
-        {
+        { 
             var result = await _Service.GetGamesAllAsync();
             return Ok(result);
         }
