@@ -1,12 +1,10 @@
 ﻿using CafeForGames.Models;
+using System.Linq.Expressions;
 
 namespace CafeForGames.Services.IRepository
 {
     public interface IGamesService
     {
-        Task<IEnumerable<Games>> GetGamesAllAsync();
-        Task<Games> GetGamesByIdAsync(int id);
-        Task<int> AddGameAsync(Games game);
-        Task DeleteGameAsync(int id);
+        Task UpdateGameAsync(Games game);
     }
 }

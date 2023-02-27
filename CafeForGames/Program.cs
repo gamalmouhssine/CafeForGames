@@ -3,6 +3,7 @@ using CafeForGames.Services.IRepository;
 using CafeForGames.Services.Repository;
 using Microsoft.EntityFrameworkCore;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
