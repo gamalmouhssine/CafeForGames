@@ -1,5 +1,6 @@
 ﻿using CafeForGames.Data;
 using CafeForGames.Models;
+using CafeForGames.Services.Base;
 using CafeForGames.Services.IRepository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -8,19 +9,20 @@ using System.Linq.Expressions;
 
 namespace CafeForGames.Services.Repository
 {
-    public class GamesService : IGamesService
+    public class GamesService : BaseRepository<Games>,IGamesService
     {
-        public GamesService(AppDbContext Context)
+        public GamesService(AppDbContext Context):base(Context)
         {
-            _Context = Context;
+            _Contexts = Context;
         }
 
-        public AppDbContext _Context { get; }
+        public AppDbContext _Contexts;
 
-        public async Task UpdateGameAsync(Games game)
+        public async Task<Games> UpdateGameAsync(Games game)
         {
-            _Context.Games.Update(game);
-            await _Context.SaveChangesAsync();
+            _Contexts.Games.Update(game);
+            await _Contexts.SaveChangesAsync();
+            return game;
         }
     }
 }

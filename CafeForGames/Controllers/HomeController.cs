@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using CafeForGames.Models;
 using CafeForGames.Services.IRepository;
+using System.Net;
 
 namespace CafeForGames.Controllers
 {
@@ -8,36 +9,62 @@ namespace CafeForGames.Controllers
     [Route("api/games")]
     public class HomeController : ControllerBase
     {
+        protected ApiResponse _response;
         public IGamesService _Service;
         public HomeController(IGamesService Service)
         {
             _Service = Service;
+            this._response = new();
         }
 
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult> Index()
+        public async Task<ActionResult<ApiResponse>> Index()
         {
-            var result = await _Service.GetGamesAllAsync();
-            return Ok(result);
+            try
+            {
+                var result = await _Service.GetGamesAllAsync();
+                _response.Result = result;
+                _response.StatusCode = HttpStatusCode.OK;
+                return Ok(_response);
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.ErrorMessages = new List<string> { ex.Message };
+            }
+            return _response;
         }
 
-        [HttpGet("{id:int}",Name ="GetGameById")]
+        [HttpGet("{id:int}", Name = "GetGameById")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult> GamesById(int id)
+        public async Task<ActionResult<ApiResponse>> GamesById(int id)
         {
-            if (id == 0)
+            try
             {
-                return BadRequest();
+                if (id == 0)
+                {
+                    _response.StatusCode = HttpStatusCode.BadRequest;
+                    return BadRequest(_response);
+                }
+                var result = await _Service.GetGamesByIdAsync(c => c.Id == id);
+                if (result == null)
+                {
+                    _response.StatusCode = HttpStatusCode.NotFound;
+                    return NotFound(_response);
+                }
+                _response.Result = result;
+                _response.StatusCode = HttpStatusCode.OK;
+                return Ok(_response);
             }
-            var result = await _Service.GetGamesByIdAsync(c=>c.Id ==id);
-            if (result == null) 
+            catch (Exception ex)
             {
-                return NotFound();
+                _response.IsSuccess = false;
+                _response.ErrorMessages = new List<string> { ex.Message };
             }
-            return Ok(result);
+            return _response;
         }
 
         [HttpPost]
@@ -45,47 +72,78 @@ namespace CafeForGames.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> AddGame([FromBody] Games Game)
+        public async Task<ActionResult<ApiResponse>> AddGame([FromBody] Games Game)
         {
-            if (await _Service.GetGamesAllAsync(u=>u.Id == Game.Id) != null)
+            try
             {
-                ModelState.AddModelError("Custom Error", "Game Aleady exist");
-                return BadRequest();
+                var result = await _Service.GetGamesAllAsync(u => u.Id == Game.Id);
+                if (Game == null)
+                {
+                    return BadRequest(Game);
+                }
+                await _Service.AddGameAsync(Game);
+                _response.Result = result;
+                _response.StatusCode = HttpStatusCode.Created;
+
+                return CreatedAtRoute("GetGameById", new { id = Game.Id }, Game);
             }
-            if (Game == null)
+            catch (Exception ex)
             {
-                return BadRequest(Game);
+                _response.IsSuccess = false;
+                _response.ErrorMessages = new List<string> { ex.Message };
             }
-            var result = await _Service.AddGameAsync(Game);
-            return CreatedAtAction(nameof(GamesById),new {id = result},result);
+            return _response;
         }
 
         [HttpDelete("{id:int}")]
-        public async Task<ActionResult> DeleteGame(int id)
+        public async Task<ActionResult<ApiResponse>> DeleteGame(int id)
         {
-            if (id == 0)
+            try
             {
-                return BadRequest();
+                if (id == 0)
+                {
+                    return BadRequest();
+                }
+                var result = await _Service.GetGamesByIdAsync(c => c.Id == id);
+
+                if (result == null) { return NotFound(); }
+
+                await _Service.DeleteGameAsync(result);
+
+                _response.StatusCode = HttpStatusCode.NoContent;
+                _response.IsSuccess = true;
+                return Ok(_response);
             }
-            var result = await _Service.GetGamesByIdAsync(c => c.Id == id);
-
-            if (result == null) { return NotFound(); }
-
-            await _Service.DeleteGameAsync(result);
-            return NoContent();
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.ErrorMessages = new List<string> { ex.Message };
+            }
+            return _response;
         }
 
         [HttpPut("{id:int}", Name = "UpdateGame")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> UpdateGame(int id,[FromBody] Games game)
+        public async Task<ActionResult<ApiResponse>> UpdateGame(int id, [FromBody] Games game)
         {
-            if (game == null || id != game.Id)
+            try
             {
-                return BadRequest();
+                if (game == null || id != game.Id)
+                {
+                    return BadRequest();
+                }
+                await _Service.UpdateGameAsync(game);
+                _response.StatusCode = HttpStatusCode.NoContent;
+                _response.IsSuccess = true;
+                return Ok(_response);
             }
-            await _Service.UpdateGameAsync(game);
-            return NoContent();
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.ErrorMessages = new List<string> { ex.Message };
+            }
+            return _response;
         }
     }
 }

@@ -14,7 +14,7 @@ namespace CafeForGames.Services.Base
             _DbSet = Context.Set<T>();
         }
 
-        public AppDbContext _Context { get; }
+        public AppDbContext _Context;
 
         public async Task AddGameAsync(T game)
         {
@@ -28,7 +28,7 @@ namespace CafeForGames.Services.Base
             await SaveGamesAsync();
         }
 
-        public async Task<IEnumerable<T>> GetGamesAllAsync(Expression<Func<T, bool>> Fillter = null)
+        public async Task<IEnumerable<T>> GetGamesAllAsync(Expression<Func<T, bool>>? Fillter = null)
         {
             IQueryable<T> query = _DbSet;
 
@@ -39,7 +39,7 @@ namespace CafeForGames.Services.Base
             return await query.ToListAsync();
         }
 
-        public async Task<T> GetGamesByIdAsync(Expression<Func<T, bool>> Fillter = null, bool tracked = true)
+        public async Task<T> GetGamesByIdAsync(Expression<Func<T, bool>>? Fillter = null, bool tracked = true)
         {
             IQueryable<T> query = _DbSet;
             if (!tracked)
