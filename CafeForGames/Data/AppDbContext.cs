@@ -7,5 +7,6 @@ namespace CafeForGames.Data
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
         public DbSet<Games> Games { get; set; }
+        public DbSet<LocalUser> Users { get; set; }
     }
 }

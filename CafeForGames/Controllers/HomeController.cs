@@ -2,11 +2,13 @@
 using CafeForGames.Models;
 using CafeForGames.Services.IRepository;
 using System.Net;
+using Microsoft.AspNetCore.Authorization;
 
 namespace CafeForGames.Controllers
 {
     [ApiController]
-    [Route("api/games")]
+    [Route("api/v{version:ApiVersion}/games")]
+    [ApiVersion("1.0")]
     public class HomeController : ControllerBase
     {
         protected ApiResponse _response;
@@ -18,7 +20,9 @@ namespace CafeForGames.Controllers
         }
 
         [HttpGet]
+        //[Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ResponseCache(Duration = 30)]
         public async Task<ActionResult<ApiResponse>> Index()
         {
             try
@@ -37,9 +41,11 @@ namespace CafeForGames.Controllers
         }
 
         [HttpGet("{id:int}", Name = "GetGameById")]
+        //[Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ResponseCache(Duration = 30)]
         public async Task<ActionResult<ApiResponse>> GamesById(int id)
         {
             try
@@ -53,6 +59,7 @@ namespace CafeForGames.Controllers
                 if (result == null)
                 {
                     _response.StatusCode = HttpStatusCode.NotFound;
+                    _response.IsSuccess = false;
                     return NotFound(_response);
                 }
                 _response.Result = result;
@@ -68,10 +75,14 @@ namespace CafeForGames.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "admin")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        
         public async Task<ActionResult<ApiResponse>> AddGame([FromBody] Games Game)
         {
             try
@@ -79,7 +90,9 @@ namespace CafeForGames.Controllers
                 var result = await _Service.GetGamesAllAsync(u => u.Id == Game.Id);
                 if (Game == null)
                 {
-                    return BadRequest(Game);
+                    _response.IsSuccess = false;
+                    _response.StatusCode = HttpStatusCode.BadRequest;
+                    return BadRequest(_response);
                 }
                 await _Service.AddGameAsync(Game);
                 _response.Result = result;
@@ -96,17 +109,30 @@ namespace CafeForGames.Controllers
         }
 
         [HttpDelete("{id:int}")]
+        [Authorize(Roles = "admin")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<ActionResult<ApiResponse>> DeleteGame(int id)
         {
             try
             {
                 if (id == 0)
                 {
-                    return BadRequest();
+                    _response.IsSuccess = false;
+                    _response.StatusCode = HttpStatusCode.BadRequest;
+                    return BadRequest(_response);
                 }
                 var result = await _Service.GetGamesByIdAsync(c => c.Id == id);
 
-                if (result == null) { return NotFound(); }
+                if (result == null) 
+                {
+                    _response.StatusCode = HttpStatusCode.NotFound;
+                    _response.IsSuccess = false;
+                    return NotFound(_response); 
+                }
 
                 await _Service.DeleteGameAsync(result);
 
@@ -123,15 +149,20 @@ namespace CafeForGames.Controllers
         }
 
         [HttpPut("{id:int}", Name = "UpdateGame")]
+        [Authorize(Roles = "admin")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<ActionResult<ApiResponse>> UpdateGame(int id, [FromBody] Games game)
         {
             try
             {
                 if (game == null || id != game.Id)
                 {
-                    return BadRequest();
+                    _response.IsSuccess = false;
+                    _response.StatusCode = HttpStatusCode.BadRequest;
+                    return BadRequest(_response);
                 }
                 await _Service.UpdateGameAsync(game);
                 _response.StatusCode = HttpStatusCode.NoContent;
